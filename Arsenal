@@ -3669,33 +3669,9 @@ local RunService = game:GetService("RunService")
 local player = game.Players.LocalPlayer
 local SpeedValue = 0.5 -- Adjust as needed
 local speedenablelolol = false -- Track if speed is enabled
-
--- Function to apply speed
-local function ApplySpeed()
-    spawn(function()
-        RunService.Heartbeat:Connect(function()
-            if speedenablelolol then
-                local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-
-                if humanoidRootPart and humanoid then
-                    local moveDirection = humanoid.MoveDirection
-                    humanoidRootPart.CFrame = humanoidRootPart.CFrame + moveDirection * SpeedValue
-                end
-            end
-        end)
-    end)
-end
-
--- Call ApplySpeed to start monitoring
-ApplySpeed()
-
--- GUI Setup
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
-local SpeedValue = 0.5 -- Adjust as needed
-local speedenablelolol = false -- Track if speed is enabled
 local InfAmmo = false -- Track if infinite ammo is enabled
+local RapidFire = false -- Track if rapid fire is enabled
+local SilentAim = false -- Track if silent aim is enabled
 
 -- Function to apply speed
 local function ApplySpeed()
@@ -3726,8 +3702,8 @@ local AimingTab = Window:CreateTab("Aimlocks")
 local PlayerTab = Window:CreateTab("Player")
 local TogglesTab = Window:CreateTab("Toggles")
 
-local AimingSection = AimingTab:CreateSector("Camlock", "left")
-local AimingSection = AimingTab:CreateSector("SilentAim", "right")
+local CamlockSection = AimingTab:CreateSector("Camlock", "left")
+local SilentAimSection = AimingTab:CreateSector("SilentAim", "right")
 
 local PlayerSection = PlayerTab:CreateSector("Movement", "left")
 local TogglesSection = TogglesTab:CreateSector("Toggles", "left")
@@ -3746,7 +3722,7 @@ local InfAmmoToggle = TogglesSection:AddToggle("InfAmmo", false, function(parame
 end)
 
 -- Add Keybind functionality for the Infinite Ammo toggle
-local InfAmmoKeybind = InfAmmoToggle:AddKeybind() -- Change F to your preferred key
+local InfAmmoKeybind = InfAmmoToggle:AddKeybind()
 
 -- Infinite Ammo Script
 spawn(function()
@@ -3762,3 +3738,78 @@ spawn(function()
         end
     end
 end)
+
+-- Add Toggle for Rapid Fire
+local RapidFireToggle = TogglesSection:AddToggle("RapidFire", false, function(parameter)
+    RapidFire = parameter
+end)
+
+-- Add Keybind functionality for the Rapid Fire toggle
+local RapidFireKeybind = RapidFireToggle:AddKeybind()
+
+-- Rapid Fire Script
+spawn(function()
+    local replicationstorage = game.ReplicatedStorage
+
+    while wait(0.1) do -- Adjust the wait time as needed
+        if RapidFire then
+            for i, v in pairs(replicationstorage.Weapons:GetDescendants()) do
+                if v.Name == "Auto" then
+                    v.Value = true
+                end
+                if v.Name == "FireRate" then
+                    v.Value = 0.02
+                end
+            end
+        end
+    end
+end)
+
+-- Add Toggle for Silent Aim
+local SilentAimToggle = SilentAimSection:AddToggle("SilentAim", false, function(parameter)
+    SilentAim = parameter
+end)
+
+-- Add Keybind functionality for the Silent Aim toggle
+local SilentAimKeybind = SilentAimToggle:AddKeybind()
+
+-- Silent Aim Script
+local function getplrsname()
+    for i, v in pairs(game:GetChildren()) do
+        if v.ClassName == "Players" then
+            return v.Name
+        end
+    end
+end
+
+local players = getplrsname()
+local plr = game[players].LocalPlayer
+
+coroutine.resume(coroutine.create(function()
+    while wait(1) do
+        coroutine.resume(coroutine.create(function()
+            if SilentAim then
+                for _, v in pairs(game[players]:GetPlayers()) do
+                    if v.Name ~= plr.Name and v.Character then
+                        v.Character.RightUpperLeg.CanCollide = false
+                        v.Character.RightUpperLeg.Transparency = 10
+                        v.Character.RightUpperLeg.Size = Vector3.new(13, 13, 13)
+
+                        v.Character.LeftUpperLeg.CanCollide = false
+                        v.Character.LeftUpperLeg.Transparency = 10
+                        v.Character.LeftUpperLeg.Size = Vector3.new(13, 13, 13)
+
+                        v.Character.HeadHB.CanCollide = false
+                        v.Character.HeadHB.Transparency = 10
+                        v.Character.HeadHB.Size = Vector3.new(13, 13, 13)
+
+                        v.Character.HumanoidRootPart.CanCollide = false
+                        v.Character.HumanoidRootPart.Transparency = 10
+                        v.Character.HumanoidRootPart.Size = Vector3.new(13, 13, 13)
+                    end
+                end
+            end
+        end))
+    end
+end))
+

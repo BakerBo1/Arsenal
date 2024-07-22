@@ -3706,6 +3706,7 @@ local TogglesTab = Window:CreateTab("Toggles")
 local VisualsTab = Window:CreateTab("Visuals")
 
 local CamlockSection = AimingTab:CreateSector("Camlock", "left")
+
 local SilentAimSection = AimingTab:CreateSector("SilentAim", "right")
 
 local PlayerSection = PlayerTab:CreateSector("Movement", "left")
@@ -4216,3 +4217,112 @@ for i, p in next, game:GetService("Players"):GetPlayers() do
 end
 
 game:GetService("Players").PlayerAdded:Connect(p_added)
+
+-- Define Toggle and Keybind for ESP Tracers
+local EspTracers = false
+
+-- Add Toggle for ESP Tracers
+local EspTracersToggle = VisualsSection:AddToggle("EspTracers", false, function(parameter)
+    EspTracers = parameter
+end)
+
+-- Add Keybind functionality for the ESP Tracers toggle
+local EspTracersKeybind = EspTracersToggle:AddKeybind()
+
+local lplr = game.Players.LocalPlayer
+local camera = game:GetService("Workspace").CurrentCamera
+local worldToViewportPoint = camera.worldToViewportPoint
+
+_G.TeamCheck = false -- Use True or False to toggle TeamCheck
+
+local function createTracerForPlayer(player)
+    local Tracer = Drawing.new("Line")
+    Tracer.Visible = false
+    Tracer.Color = Color3.new(1,1,1)
+    Tracer.Thickness = 1
+    Tracer.Transparency = 1
+
+    local function updateTracer()
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if EspTracers then  -- Check if ESP Tracers is enabled
+                if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") and player ~= lplr and player.Character.Humanoid.Health > 0 then
+                    local Vector, OnScreen = camera:worldToViewportPoint(player.Character.HumanoidRootPart.Position)
+
+                    if OnScreen then
+                        Tracer.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 1)
+                        Tracer.To = Vector2.new(Vector.X, Vector.Y)
+
+                        if _G.TeamCheck and player.TeamColor == lplr.TeamColor then
+                            --//Teammates
+                            Tracer.Visible = false
+                        else
+                            --//Enemies
+                            Tracer.Visible = true
+                        end
+                    else
+                        Tracer.Visible = false
+                    end
+                else
+                    Tracer.Visible = false
+                end
+            else
+                Tracer.Visible = false
+            end
+        end)
+    end
+    coroutine.wrap(updateTracer)()
+end
+
+-- Create tracers for existing players
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player ~= lplr then
+        createTracerForPlayer(player)
+    end
+end
+
+-- Create tracers for new players
+game.Players.PlayerAdded:Connect(function(player)
+    if player ~= lplr then
+        createTracerForPlayer(player)
+    end
+end)
+
+-- Add Toggle for Camlock
+local CamlockToggle = CamlockSection:AddToggle("Camlock", false, function(parameter)
+    Camlock = parameter
+end)
+
+-- Add Keybind functionality for the Camlock toggle
+local CamlockKeybind = CamlockToggle:AddKeybind()
+
+-- Add Toggle for No Recoil
+local NoRecoilToggle = PlayerSection:AddToggle("No Recoil", false, function(parameter)
+    NoRecoil = parameter
+end)
+
+-- Add Keybind functionality for the No Recoil toggle
+NoRecoilToggle:AddKeybind()
+
+local ReplicationStorage = game.ReplicatedStorage
+local NoRecoil = false  -- Initialize NoRecoil variable
+
+-- Function to reset recoil and max spread
+local function resetRecoilAndSpread()
+    if NoRecoil then
+        for _, weapon in pairs(ReplicationStorage.Weapons:GetDescendants()) do
+            if weapon:IsA("NumberValue") then
+                if weapon.Name == "RecoilControl" then
+                    weapon.Value = 0
+                elseif weapon.Name == "MaxSpread" then
+                    weapon.Value = 0
+                end
+            end
+        end
+    end
+end
+
+-- Continuously reset recoil and spread every 1 second if NoRecoil is enabled
+while true do
+    resetRecoilAndSpread()
+    wait(1)  -- Adjust the frequency here if needed
+end

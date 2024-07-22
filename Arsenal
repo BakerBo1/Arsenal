@@ -3691,6 +3691,33 @@ end
 ApplySpeed()
 
 -- GUI Setup
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+local SpeedValue = 0.5 -- Adjust as needed
+local speedenablelolol = false -- Track if speed is enabled
+local InfAmmo = false -- Track if infinite ammo is enabled
+
+-- Function to apply speed
+local function ApplySpeed()
+    spawn(function()
+        RunService.Heartbeat:Connect(function()
+            if speedenablelolol then
+                local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+
+                if humanoidRootPart and humanoid then
+                    local moveDirection = humanoid.MoveDirection
+                    humanoidRootPart.CFrame = humanoidRootPart.CFrame + moveDirection * SpeedValue
+                end
+            end
+        end)
+    end)
+end
+
+-- Call ApplySpeed to start monitoring
+ApplySpeed()
+
+-- GUI Setup
 local NotifyLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/Dynissimo/main/Scripts/AkaliNotif.lua"))()
 local Notify = NotifyLibrary.Notify
 local Window = library:CreateWindow("MoonWalker - Arsenal", Vector2.new(492, 592), Enum.KeyCode.RightShift)
@@ -3717,6 +3744,9 @@ SpeedBindxd:AddKeybind()
 local InfAmmoToggle = TogglesSection:AddToggle("InfAmmo", false, function(parameter)
     InfAmmo = parameter
 end)
+
+-- Add Keybind functionality for the Infinite Ammo toggle
+local InfAmmoKeybind = InfAmmoToggle:AddKeybind() -- Change F to your preferred key
 
 -- Infinite Ammo Script
 spawn(function()

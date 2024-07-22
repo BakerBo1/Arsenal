@@ -1,0 +1,19 @@
+local function callback(Text)
+end
+ 
+local NotificationBindable = Instance.new("BindableFunction")
+NotificationBindable.OnInvoke = callback
+ 
+game.StarterGui:SetCore("SendNotification", {
+    Title = "MoonWalker";
+    Text = "By @moonwalker.24";
+    Duration = "5";
+    Callback = NotificationBindable;
+})
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BakerBo1/Pastebin-Gui-Lock/main/LOck"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BakerBo1/AlifNotify/main/Alifnotify"))()
+
+local NotifyLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/Dynissimo/main/Scripts/AkaliNotif.lua"))()
+local Notify = NotifyLibrary.Notify
+local Window = library:CreateWindow("MoonWalker - Arsenal", Vector2.new(492, 592), Enum.KeyCode.RightShift) 

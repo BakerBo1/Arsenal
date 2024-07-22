@@ -3665,20 +3665,70 @@ function library:CreateWindow(name, size, hidebutton)
     return window
 end
 -- end of gui
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+local SpeedValue = 0.5 -- Adjust as needed
+local speedenablelolol = false -- Track if speed is enabled
+
+-- Function to apply speed
+local function ApplySpeed()
+    spawn(function()
+        RunService.Heartbeat:Connect(function()
+            if speedenablelolol then
+                local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+
+                if humanoidRootPart and humanoid then
+                    local moveDirection = humanoid.MoveDirection
+                    humanoidRootPart.CFrame = humanoidRootPart.CFrame + moveDirection * SpeedValue
+                end
+            end
+        end)
+    end)
+end
+
+-- Call ApplySpeed to start monitoring
+ApplySpeed()
+
+-- GUI Setup
 local NotifyLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/Dynissimo/main/Scripts/AkaliNotif.lua"))()
 local Notify = NotifyLibrary.Notify
-local Window = library:CreateWindow("MoonWalker - Arsenal", Vector2.new(492, 592), Enum.KeyCode.RightShift) 
+local Window = library:CreateWindow("MoonWalker - Arsenal", Vector2.new(492, 592), Enum.KeyCode.RightShift)
 
 local AimingTab = Window:CreateTab("Aimlocks")
 local PlayerTab = Window:CreateTab("Player")
-local MiscTab = Window:CreateTab("Misc")
-
+local TogglesTab = Window:CreateTab("Toggles")
 
 local AimingSection = AimingTab:CreateSector("Camlock", "left")
 local AimingSection = AimingTab:CreateSector("SilentAim", "right")
 
 local PlayerSection = PlayerTab:CreateSector("Movement", "left")
+local TogglesSection = TogglesTab:CreateSector("Toggles", "left")
 
+-- Add Toggle for Speed
+local SpeedBindxd = PlayerSection:AddToggle("Speed", false, function(parameter)
+    speedenablelolol = parameter
+end)
 
+-- Add Keybind functionality for the Speed toggle
+SpeedBindxd:AddKeybind()
 
+-- Add Toggle for Infinite Ammo
+local InfAmmoToggle = TogglesSection:AddToggle("InfAmmo", false, function(parameter)
+    InfAmmo = parameter
+end)
 
+-- Infinite Ammo Script
+spawn(function()
+    while wait(0.1) do  -- Adjust the wait time as needed
+        if InfAmmo then
+            local ammoCount = player.PlayerGui.GUI.Client.Variables.ammocount
+            local ammoCount2 = player.PlayerGui.GUI.Client.Variables.ammocount2
+
+            if ammoCount and ammoCount2 then
+                ammoCount.Value = 999
+                ammoCount2.Value = 999
+            end
+        end
+    end
+end)

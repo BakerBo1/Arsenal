@@ -3672,65 +3672,11 @@ local Window = library:CreateWindow("MoonWalker - Arsenal", Vector2.new(492, 592
 local AimingTab = Window:CreateTab("Aimlocks")
 local PlayerTab = Window:CreateTab("Player")
 local MiscTab = Window:CreateTab("Misc")
-local MovementTab = Window:CreateTab("Movement")
 
--- Create separate sections in the MovementTab
-local MovementSection = MovementTab:CreateSector("Movement Controls", "left")
 
--- Add Speed Toggle and Keybind
-local SpeedToggle = MovementSection:AddToggle("Speed", false, function(parameter)
-    speedenablelolol = parameter
-end)
-SpeedToggle:AddKeybind()
+local AimingSection = AimingTab:CreateSector("Camlock", "left")
+local AimingSection = AimingTab:CreateSector("SilentAim", "right")
 
--- Add Fly Toggle and Keybind
-local FlightToggle = MovementSection:AddToggle("Flight", false, function(parameter)
-    if parameter then
-        FlyLoop = game:GetService("RunService").Stepped:Connect(function()
-            spawn(function()
-                pcall(function()
-                    local speed = FlySpeed
-                    local velocity = Vector3.new(0, 1, 0)
-                    local UserInputService = game:GetService("UserInputService")
+local PlayerSection = PlayerTab:CreateSector("Movement", "left")
 
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                        velocity = velocity + (workspace.CurrentCamera.CoordinateFrame.lookVector * speed)
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                        velocity = velocity + (workspace.CurrentCamera.CoordinateFrame.rightVector * -speed)
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                        velocity = velocity + (workspace.CurrentCamera.CoordinateFrame.lookVector * -speed)
-                    end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                        velocity = velocity + (workspace.CurrentCamera.CoordinateFrame.rightVector * speed)
-                    end
-                    
-                    player.Character.HumanoidRootPart.Velocity = velocity
-                    player.Character.Humanoid:ChangeState("Freefall")
-                end)
-            end)
-        end)
-    elseif parameter == false and FlyLoop then
-        FlyLoop:Disconnect()
-        player.Character.Humanoid:ChangeState("Landing")
-    end
-end)
-FlightToggle:AddKeybind()
 
--- Add Speed Slider
-MovementTab:AddSlider("Speed Amount", 1, 1, 5000, 10, function(State)
-    SpeedValue = State / 1000
-end)
-
--- Add Fly Speed Slider
-MovementTab:AddSlider("Fly Speed", 1, 1, 5000, 1, function(State)
-    FlySpeed = State / 1000 * 50
-end)
-
--- Ensure the player object and other required variables are defined
-local player = game.Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local speedenablelolol = false
-local FlySpeed = 1
-local SpeedValue = 1

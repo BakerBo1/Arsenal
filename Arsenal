@@ -4910,12 +4910,150 @@ end)
 
 -- GUI Script Integration
 -- Add Toggle for Camlock
+local CamlockEnabled = false -- Initialize state for camlock
+
+-- GUI Toggle Script
 local CamlockToggle = CamlockSection:AddToggle("Camlock", false, function(state)
     CamlockEnabled = state
 end)
 
 -- Add Keybind functionality for the Camlock toggle
 local CamlockKeybind = CamlockToggle:AddKeybind()
+
+-- Original Aimlock Script with GUI Integration
+local function callback(Text)
+end
+
+local NotificationBindable = Instance.new("BindableFunction")
+NotificationBindable.OnInvoke = callback
+
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Lock";
+    Text = "Aimlock is active.";
+    Duration = "5";
+    Callback = NotificationBindable;
+})
+
+-- Configuration
+getgenv().OldAimPart = "HumanoidRootPart"
+getgenv().AimPart = "HumanoidRootPart" -- For R15 Games: {UpperTorso, LowerTorso, HumanoidRootPart, Head} | For R6 Games: {Head, Torso, HumanoidRootPart}
+getgenv().AimRadius = 50 -- How far away from someone's character you want to lock on at
+getgenv().TeamCheck = true -- Check if Target is on your Team (True means it won't lock onto your teammates, false is vice versa)
+getgenv().PredictMovement = true -- Predicts if they are moving in fast velocity
+getgenv().PredictionVelocity = 6.612
+getgenv().CheckIfJumped = true
+getgenv().Smoothness = false
+getgenv().SmoothnessAmount = 0.2
+getgenv().UnlockKey = "x" -- Key to manually unlock the aim lock
+
+-- Services and variables
+local Players, RService, Camera, CF, RNew = game:GetService("Players"), game:GetService("RunService"), workspace.CurrentCamera, CFrame.new, Ray.new
+local Client, Mouse = Players.LocalPlayer, Players.LocalPlayer:GetMouse()
+local Aimlock, CanNotify = false, false -- Set Aimlock to false initially
+local AimlockTarget
+
+getgenv().WorldToViewportPoint = function(P)
+    return Camera:WorldToViewportPoint(P)
+end
+
+getgenv().WorldToScreenPoint = function(P)
+    return Camera.WorldToScreenPoint(Camera, P)
+end
+
+getgenv().GetObscuringObjects = function(T)
+    if T and T:FindFirstChild(getgenv().AimPart) and Client and Client.Character:FindFirstChild("Head") then 
+        local RayPos = workspace:FindPartOnRay(RNew(T[getgenv().AimPart].Position, Client.Character.Head.Position))
+        if RayPos then return RayPos:IsDescendantOf(T) end
+    end
+end
+
+getgenv().GetNearestTarget = function()
+    local players = {}
+    local PLAYER_HOLD = {}
+    local DISTANCES = {}
+    
+    for i, v in pairs(Players:GetPlayers()) do
+        if v ~= Client and v.Character then
+            local AIM = v.Character:FindFirstChild("Head")
+            local DISTANCE = (v.Character:FindFirstChild("Head").Position - Camera.CFrame.p).magnitude
+            local RAY = RNew(Camera.CFrame.p, (Mouse.Hit.p - Camera.CFrame.p).unit * DISTANCE)
+            local HIT, POS = workspace:FindPartOnRay(RAY, workspace)
+            local DIFF = math.floor((POS - AIM.Position).magnitude)
+
+            if (getgenv().TeamCheck and v.Team ~= Client.Team) or (not getgenv().TeamCheck and v.Team == Client.Team) then
+                PLAYER_HOLD[v.Name .. i] = {}
+                PLAYER_HOLD[v.Name .. i].dist = DISTANCE
+                PLAYER_HOLD[v.Name .. i].plr = v
+                PLAYER_HOLD[v.Name .. i].diff = DIFF
+                table.insert(DISTANCES, DIFF)
+            end
+        end
+    end
+
+    if #DISTANCES == 0 then
+        return nil
+    end
+
+    local L_DISTANCE = math.floor(math.min(unpack(DISTANCES)))
+    if L_DISTANCE > getgenv().AimRadius then
+        return nil
+    end
+
+    for i, v in pairs(PLAYER_HOLD) do
+        if v.diff == L_DISTANCE then
+            return v.plr
+        end
+    end
+    return nil
+end
+
+Mouse.KeyDown:Connect(function(a)
+    if a == getgenv().UnlockKey then
+        -- Unlock the aim lock
+        AimlockTarget = nil
+    end
+end)
+
+RService.RenderStepped:Connect(function()
+    if (Camera.Focus.p - Camera.CoordinateFrame.p).Magnitude > 1 then
+        CanNotify = true
+    else
+        CanNotify = false
+    end
+
+    if CamlockEnabled then
+        if not AimlockTarget or not AimlockTarget.Character or not AimlockTarget.Character:FindFirstChild(getgenv().AimPart) then
+            -- Target is invalid or dead, unlock and find a new target
+            AimlockTarget = getgenv().GetNearestTarget()
+        end
+
+        if AimlockTarget and AimlockTarget.Character and AimlockTarget.Character:FindFirstChild(getgenv().AimPart) then
+            if getgenv().PredictMovement == true then
+                if getgenv().Smoothness == true then
+                    local Main = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position + AimlockTarget.Character[getgenv().AimPart].Velocity / getgenv().PredictionVelocity)
+                    Camera.CFrame = Camera.CFrame:Lerp(Main, getgenv().SmoothnessAmount, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
+                else
+                    Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position + AimlockTarget.Character[getgenv().AimPart].Velocity / getgenv().PredictionVelocity)
+                end
+            else
+                if getgenv().Smoothness == true then
+                    local Main = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position)
+                    Camera.CFrame = Camera.CFrame:Lerp(Main, getgenv().SmoothnessAmount, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
+                else
+                    Camera.CFrame = CF(Camera.CFrame.p, AimlockTarget.Character[getgenv().AimPart].Position)
+                end
+            end
+        end
+    end
+
+    if getgenv().CheckIfJumped == true and AimlockTarget and AimlockTarget.Character and AimlockTarget.Character:FindFirstChild("Humanoid") then
+        if AimlockTarget.Character.Humanoid.FloorMaterial == Enum.Material.Air then
+            getgenv().AimPart = "HumanoidRootPart"
+        else
+            getgenv().AimPart = getgenv().OldAimPart
+        end
+    end
+end)
 
 
 -- GUI Code
